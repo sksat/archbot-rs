@@ -1,0 +1,17 @@
+[package]
+name = "archbot-rs"
+version = "0.1.0"
+authors = ["sksat <sksat@sksat.net>"]
+edition = "2018"
+
+[dependencies]
+async-std = { version = "1.9.0", features = ["attributes"] }
+async-tls = "0.11.0"
+async-tungstenite = "0.13.1"
+futures-util = "0.3.14"
+serde = "1.0.125"
+serde_json = "1.0.64"
+slack = "0.25.0"
+surf = "2.2.0"
+tungstenite = "0.13.0"
+url = "2.2.1"
