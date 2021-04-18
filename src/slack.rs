@@ -114,7 +114,7 @@ pub struct EventsApiPayload<'a> {
     token: &'a str,
     team_id: &'a str,
     api_app_id: &'a str,
-    event: Event<'a>,
+    pub event: Event<'a>,
     #[serde(rename = "type")]
     typ: &'a str,
     event_id: &'a str,
@@ -126,18 +126,22 @@ pub struct EventsApiPayload<'a> {
 
 #[derive(serde::Deserialize, Debug)]
 #[serde(rename_all = "snake_case", tag = "type")]
-enum Event<'a> {
-    Message {
-        client_msg_id: &'a str,
-        text: &'a str,
-        user: &'a str,
-        ts: &'a str,
-        team: &'a str,
-        // blocks
-        channel: &'a str,
-        event_ts: &'a str,
-        channel_type: &'a str,
-    },
+pub enum Event<'a> {
+    Message(EventMessage<'a>),
+    _Dummy { hoge: &'a str }, // これがないとserde::Deserializeのマクロ展開でライフタイムがいいかんじにならず死ぬ
+}
+
+#[derive(serde::Deserialize, Debug)]
+pub struct EventMessage<'a> {
+    client_msg_id: &'a str,
+    pub text: &'a str,
+    pub user: &'a str,
+    ts: &'a str,
+    team: &'a str,
+    // blocks
+    pub channel: &'a str,
+    event_ts: &'a str,
+    pub channel_type: &'a str,
 }
 
 #[derive(serde::Deserialize, Debug)]

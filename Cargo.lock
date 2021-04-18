@@ -76,6 +76,7 @@ dependencies = [
  "async-tls",
  "async-tungstenite",
  "futures-util",
+ "rand 0.8.3",
  "serde",
  "serde_json",
  "slack",
