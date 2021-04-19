@@ -128,12 +128,14 @@ pub struct EventsApiPayload<'a> {
 #[serde(rename_all = "snake_case", tag = "type")]
 pub enum Event<'a> {
     Message(EventMessage<'a>),
+    AppMention {},
     _Dummy { hoge: &'a str }, // これがないとserde::Deserializeのマクロ展開でライフタイムがいいかんじにならず死ぬ
 }
 
 #[derive(serde::Deserialize, Debug)]
 pub struct EventMessage<'a> {
-    client_msg_id: &'a str,
+    client_msg_id: Option<&'a str>,
+    bot_id: Option<&'a str>,
     pub text: &'a str,
     pub user: &'a str,
     ts: &'a str,
@@ -171,7 +173,9 @@ pub async fn get_ws_url(token: &str) -> WsUrlResult {
 }
 
 pub fn parse_message(json: &str) -> Result<Message, ParseMessageError> {
-    let msg: Message = serde_json::from_str(json).unwrap();
+    let json_pretty = jsonxf::pretty_print(json).unwrap();
+    println!("pretty: {}", json_pretty);
+    let msg: Message = serde_json::from_str(&json).unwrap();
     println!("{:?}", msg);
     Ok(msg)
 }
