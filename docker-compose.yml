@@ -2,8 +2,10 @@ version: '3.7'
 
 services:
   archbot:
-    build: .
+    #build: .
+    image: ghcr.io/sksat/archbot-rs:main
     restart: always
+
     volumes:
       - type: bind
         source: ./config.toml
