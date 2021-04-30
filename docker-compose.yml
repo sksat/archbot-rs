@@ -1,0 +1,10 @@
+version: '3.7'
+
+services:
+  archbot:
+    build: .
+    restart: always
+    volumes:
+      - type: bind
+        source: ./config.toml
+        target: /app/config.toml
