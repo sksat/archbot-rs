@@ -3,6 +3,9 @@ name: Build Container Image
 on:
   push:
     paths:
+      - 'src/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
       - 'Dockerfile'
       - '.github/workflows/**'
 
