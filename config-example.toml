@@ -1,0 +1,5 @@
+app_token = "xapp-******"
+bot_token = "xoxb-******"
+
+channel = "arch"
+member = ["otaku0", "otaku1", "otaku2"]
