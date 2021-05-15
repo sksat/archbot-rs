@@ -2,6 +2,7 @@
 
 ![](https://github.com/sksat/archbot-rs/actions/workflows/ci.yml/badge.svg)
 ![](https://github.com/sksat/archbot-rs/actions/workflows/build-image.yml/badge.svg)
+![](https://img.shields.io/docker/image-size/sksat/archbot-rs)
 
 Yet Another [archbot](https://github.com/sfc-arch/archbot) written by Rust.  
 This is a Slack bot used in a [**Arch**](https://arch.sfc.wide.ad.jp/) group in Murai lab at SFC.
