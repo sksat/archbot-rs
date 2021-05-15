@@ -77,7 +77,7 @@ pub enum Message<'a> {
     Disconnect {
         reason: &'a str,
     },
-    EventsApi(EventsApiMessage<'a>),
+    EventsApi(Box<EventsApiMessage<'a>>),
 }
 
 #[derive(serde::Deserialize, Debug)]
