@@ -34,11 +34,15 @@ async fn auth_test(token: &str) {
         .recv_string()
         .await
         .unwrap();
-    dbg!(r);
+    log::debug!("{:?}", r);
 }
 
 #[async_std::main]
 async fn main() {
+    std::env::set_var("RUST_LOG", "archbot=info");
+    env_logger::init();
+
+    log::info!("loading config");
     let mut cfg_file = fs::File::open("config.toml").unwrap();
     let mut cfg = String::new();
     let _ = cfg_file.read_to_string(&mut cfg);
@@ -61,16 +65,16 @@ async fn main() {
         .await
         .unwrap();
 
-    dbg!(&stream);
+    log::debug!("{:?}", &stream);
 
     while let Some(msg) = stream.next().await {
         let msg = msg.unwrap();
         match msg {
             tungstenite::Message::Ping(_) => {
-                println!("ping");
+                log::debug!("ping");
             }
             tungstenite::Message::Text(txt) => {
-                println!("msg: {}", txt);
+                log::debug!("msg: {}", txt);
                 let msg = slack::parse_message(&txt).unwrap();
                 match msg {
                     slack::Message::EventsApi(ea) => {
@@ -83,7 +87,11 @@ async fn main() {
                         match event {
                             slack::Event::Message(msg) => match msg.text {
                                 "logger random" => {
-                                    println!("logger random from {} by {}", msg.channel, msg.user);
+                                    log::info!(
+                                        "logger random from {} by {}",
+                                        msg.channel,
+                                        msg.user
+                                    );
 
                                     // choose
                                     let logger =
@@ -107,7 +115,7 @@ async fn main() {
                                         .recv_string()
                                         .await
                                         .unwrap();
-                                    dbg!(r);
+                                    log::debug!("{:?}", r);
                                 }
                                 _ => {}
                             },
@@ -117,7 +125,7 @@ async fn main() {
                     _ => {}
                 }
             }
-            _ => eprintln!("Unknown message: {:?}", msg),
+            _ => log::error!("Unknown message: {:?}", msg),
         }
     }
 }
