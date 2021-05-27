@@ -157,6 +157,7 @@ struct Authorization<'a> {
 
 #[derive(Debug)]
 pub enum ParseMessageError {
+    JsonParse(serde_json::Error),
     _Unknown,
 }
 
@@ -175,7 +176,13 @@ pub async fn get_ws_url(token: &str) -> WsUrlResult {
 pub fn parse_message(json: &str) -> Result<Message, ParseMessageError> {
     let json_pretty = jsonxf::pretty_print(json).unwrap();
     log::debug!("pretty: {}", json_pretty);
-    let msg: Message = serde_json::from_str(&json).unwrap();
+    let msg: Message = serde_json::from_str(&json)?;
     log::debug!("{:?}", msg);
     Ok(msg)
+}
+
+impl From<serde_json::Error> for ParseMessageError {
+    fn from(e: serde_json::Error) -> ParseMessageError {
+        ParseMessageError::JsonParse(e)
+    }
 }

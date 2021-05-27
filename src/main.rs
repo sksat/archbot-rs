@@ -75,7 +75,12 @@ async fn main() {
             }
             tungstenite::Message::Text(txt) => {
                 log::debug!("msg: {}", txt);
-                let msg = slack::parse_message(&txt).unwrap();
+                let msg = slack::parse_message(&txt);
+                if msg.is_err() {
+                    log::error!("{:?}", msg.err().unwrap());
+                    continue;
+                }
+                let msg = msg.unwrap();
                 match msg {
                     slack::Message::EventsApi(ea) => {
                         // reply ack
@@ -113,8 +118,13 @@ async fn main() {
                                             format!("Bearer {}", &cfg.bot_token),
                                         )
                                         .recv_string()
-                                        .await
-                                        .unwrap();
+                                        .await;
+
+                                    if r.is_err() {
+                                        log::error!("POST: {:?}", r.err().unwrap());
+                                        continue;
+                                    }
+
                                     log::debug!("{:?}", r);
                                 }
                                 _ => {}
