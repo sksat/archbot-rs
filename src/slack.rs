@@ -161,6 +161,76 @@ pub enum ParseMessageError {
     _Unknown,
 }
 
+#[derive(Debug)]
+//#[serde(tag = "ok")]
+pub enum PostInfoRaw<'a> {
+    //#[serde(rename = "true")]
+    Ok(PostInfo<'a>),
+
+    //#[serde(rename = "false")]
+    Error(PostError),
+    //#[serde(rename = "_dummy")]
+    //_Dummy { hoge: &'a str },
+}
+
+// https://stackoverflow.com/questions/65575385/deserialization-of-json-with-serde-by-a-numerical-value-as-type-identifier/65576570#65576570
+impl<'de: 'a, 'a> serde::Deserialize<'de> for PostInfoRaw<'a> {
+    fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<PostInfoRaw<'a>, D::Error> {
+        use serde_json::Value;
+        let v = Value::deserialize(d)?;
+
+        match v.get("ok").and_then(Value::as_bool).unwrap() {
+            true => {
+                let pi = PostInfo::deserialize(v);
+                if let Ok(r) = pi {
+                    Ok(PostInfoRaw::Ok(r))
+                } else {
+                    Err(serde::de::Error::unknown_field("PostInfo", &["?"]))
+                }
+            }
+            false => Ok(PostInfoRaw::Error(PostError::deserialize(v).unwrap())),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::slack::*;
+
+    #[test]
+    fn deserialize_postinfo_error() {
+        let es = "{\"ok\":false,\"error\":\"channel_not_found\"}";
+        let _e: PostInfoRaw = serde_json::from_str(&es).unwrap();
+
+        let es = "{\"ok\":false,\"error\":\"not_in_channel\"}";
+        let _e: PostInfoRaw = serde_json::from_str(&es).unwrap();
+    }
+
+    #[test]
+    fn deserialize_postinfo_ok() {
+        let os = "{\"ok\":true,\"channel\":\"C02389A6YGJ\",\"ts\":\"1622717214.001900\",\"message\":{\"bot_id\":\"hoge\",\"type\":\"message\",\"text\":\"sksat\",\"user\":\"U01UR56PLLC\",\"ts\":\"1622717214.001900\",\"team\":\"T01U5SDH0QH\",\"bot_profile\":{\"id\":\"B01UK6J77JP\",\"deleted\":false,\"name\":\"archbot\",\"updated\":1618578906,\"app_id\":\"A01UC646PGW\",\"icons\":{\"image_36\":\"https:\\/\\/a.slack-edge.com\\/80588\\/img\\/plugins\\/app\\/bot_36.png\",\"image_48\":\"https:\\/\\/a.slack-edge.com\\/80588\\/img\\/plugins\\/app\\/bot_48.png\",\"image_72\":\"https:\\/\\/a.slack-edge.com\\/80588\\/img\\/plugins\\/app\\/service_72.png\"},\"team_id\":\"T01U5SDH0QH\"}}}";
+        let _o: PostInfoRaw = serde_json::from_str(&os).unwrap();
+    }
+}
+
+#[derive(serde::Deserialize, Debug)]
+pub struct PostInfo<'a> {
+    channel: &'a str,
+    ts: &'a str,
+    message: EventMessage<'a>,
+}
+
+#[derive(serde::Deserialize, Debug)]
+#[serde(rename_all = "snake_case", tag = "error")]
+pub enum PostError {
+    //pub error: String,
+    ChannelNotFound,
+    NotInChannel,
+
+    #[serde(other)]
+    Unknown,
+}
+
 pub async fn get_ws_url(token: &str) -> WsUrlResult {
     let res: surf::Result<WsUrlResponseJson> =
         surf::post("https://slack.com/api/apps.connections.open")

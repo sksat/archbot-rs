@@ -100,7 +100,8 @@ async fn main() {
 
                                     // choose
                                     let logger =
-                                        &cfg.member.choose(&mut rand::thread_rng()).unwrap();
+                                        &cfg.member.choose(&mut rand::rngs::OsRng).unwrap();
+                                    log::info!("logger choosed: {}", logger);
 
                                     let channel = &cfg.channel;
                                     let mut q = HashMap::new();
@@ -125,7 +126,15 @@ async fn main() {
                                         continue;
                                     }
 
-                                    log::debug!("{:?}", r);
+                                    let r = r.unwrap();
+                                    log::info!("{}", r);
+                                    let info: Result<slack::PostInfoRaw, _> =
+                                        serde_json::from_str(&r);
+                                    if let Ok(i) = info {
+                                        log::info!("{:?}", i)
+                                    } else {
+                                        log::error!("{:?}", info.err().unwrap());
+                                    }
                                 }
                                 _ => {}
                             },
