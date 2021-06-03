@@ -68,6 +68,11 @@ async fn main() {
     log::debug!("{:?}", &stream);
 
     while let Some(msg) = stream.next().await {
+        if let Err(me) = msg {
+            // like Protocol(ResetWithoutClosingHandshake)
+            log::error!("msg error: {:?}", me);
+            continue;
+        }
         let msg = msg.unwrap();
         match msg {
             tungstenite::Message::Ping(_) => {
@@ -75,7 +80,12 @@ async fn main() {
             }
             tungstenite::Message::Text(txt) => {
                 log::debug!("msg: {}", txt);
-                let msg = slack::parse_message(&txt).unwrap();
+                let msg = slack::parse_message(&txt);
+                if msg.is_err() {
+                    log::error!("{:?}", msg.err().unwrap());
+                    continue;
+                }
+                let msg = msg.unwrap();
                 match msg {
                     slack::Message::EventsApi(ea) => {
                         // reply ack
@@ -84,48 +94,54 @@ async fn main() {
                         stream.send(tungstenite::Message::Text(ack)).await.unwrap();
 
                         let event = ea.payload.event;
-                        match event {
-                            slack::Event::Message(msg) => match msg.text {
-                                "logger random" => {
-                                    log::info!(
-                                        "logger random from {} by {}",
-                                        msg.channel,
-                                        msg.user
-                                    );
-
-                                    // choose
-                                    let logger =
-                                        &cfg.member.choose(&mut rand::thread_rng()).unwrap();
-
-                                    let channel = &cfg.channel;
-                                    let mut q = HashMap::new();
-                                    q.insert("channel", &channel);
-                                    q.insert("text", &logger);
-                                    let url = url::Url::parse_with_params(
-                                        "https://slack.com/api/chat.postMessage",
-                                        &q,
-                                    )
-                                    .unwrap();
-
-                                    let r = surf::post(url)
-                                        .header(
-                                            surf::http::headers::AUTHORIZATION,
-                                            format!("Bearer {}", &cfg.bot_token),
-                                        )
-                                        .recv_string()
-                                        .await
-                                        .unwrap();
-                                    log::debug!("{:?}", r);
-                                }
+                        if let slack::Event::Message(msg) = event {
+                            match msg.text {
+                                "logger random" => loggger_random(&cfg, &msg).await,
                                 _ => {}
-                            },
-                            _ => {}
+                            }
                         }
                     }
-                    _ => {}
+                    _ => log::error!("unknown message: {:?}", msg),
                 }
             }
             _ => log::error!("Unknown message: {:?}", msg),
         }
+    }
+}
+
+async fn loggger_random(cfg: &Config, msg: &slack::EventMessage<'_>) {
+    log::info!("logger random from {} by {}", msg.channel, msg.user);
+
+    // choose
+    let logger = &cfg.member.choose(&mut rand::rngs::OsRng).unwrap();
+    log::info!("logger choosed: {}", logger);
+
+    let channel = &cfg.channel;
+    let mut q = HashMap::new();
+    q.insert("channel", &channel);
+    q.insert("text", &logger);
+    let url = url::Url::parse_with_params("https://slack.com/api/chat.postMessage", &q).unwrap();
+
+    let r = surf::post(url)
+        .header(
+            surf::http::headers::AUTHORIZATION,
+            format!("Bearer {}", &cfg.bot_token),
+        )
+        .recv_string()
+        .await;
+
+    if r.is_err() {
+        log::error!("POST: {:?}", r.err().unwrap());
+        return;
+        //continue;
+    }
+
+    let r = r.unwrap();
+    log::info!("{}", r);
+    let info: Result<slack::PostInfoRaw, _> = serde_json::from_str(&r);
+    if let Ok(i) = info {
+        log::info!("{:?}", i)
+    } else {
+        log::error!("{:?}", info.err().unwrap());
     }
 }
