@@ -7,14 +7,30 @@
 Yet Another [archbot](https://github.com/sfc-arch/archbot) written by Rust.  
 This is a Slack bot used in a [**Arch**](https://arch.sfc.wide.ad.jp/) group in Murai lab at SFC.
 
-## Setup & Run
+## Setup & Deploy
 
 ```sh
 $ git clone https://github.com/sksat/archbot-rs
 $ cd archbot-rs
 $ cp config-example.toml config.toml
 $ nvim config.toml      # add Slack token & members
+```
+
+### docker-compose
+
+```sh
 $ docker-compose up -d  # use docker image on ghcr.io(build by GitHub Actions)
+```
+
+### compose-cd(docker-compose)
+
+[compose-cd](https://github.com/sksat/compose-cd) is Continuous Deployment utility for docker-compose.
+
+```sh
+$ wget https://raw.githubusercontent.com/sksat/compose-cd/main/compose-cd
+$ ./compose-cd install
+$ cd $COMPOSE_CD_SEARCH_ROOT
+$ git clone https://github.com/sksat/archbot-rs # use default .compose-cd
 ```
 
 ## Build from source
