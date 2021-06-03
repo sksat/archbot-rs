@@ -68,6 +68,11 @@ async fn main() {
     log::debug!("{:?}", &stream);
 
     while let Some(msg) = stream.next().await {
+        if let Err(me) = msg {
+            // like Protocol(ResetWithoutClosingHandshake)
+            log::error!("msg error: {:?}", me);
+            continue;
+        }
         let msg = msg.unwrap();
         match msg {
             tungstenite::Message::Ping(_) => {
