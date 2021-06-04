@@ -102,8 +102,21 @@ async fn main() {
                                 }
                             }
 
+                            log::debug!("msg: \"{}\"", &msg.text);
                             match msg.text.as_str() {
                                 "logger random" => loggger_random(&cfg, &msg).await,
+                                "logger list" => {
+                                    let list = &cfg.member;
+                                    let list: String = list
+                                        .into_iter()
+                                        .map(|m| {
+                                            let mut m = m.clone();
+                                            m += "\n";
+                                            return m;
+                                        })
+                                        .collect();
+                                    slack::post_message(&cfg.bot_token, &cfg.channel, &list).await
+                                }
                                 _ => {}
                             }
                         }
