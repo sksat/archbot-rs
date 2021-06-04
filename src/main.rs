@@ -101,25 +101,13 @@ async fn main() {
                         if let slack::Event::Message(msg) = event {
                             // Slack Reminder
                             if msg.user == "USLACKBOT" && msg.text.contains("logger random") {
-                                loggger_random(&cfg, &msg).await;
+                                loggger_random(&cfg).await;
                             }
 
                             log::debug!("msg: \"{}\"", &msg.text);
-                            match msg.text.as_str() {
-                                "logger random" => loggger_random(&cfg, &msg).await,
-                                "logger list" => {
-                                    let list = &cfg.member;
-                                    let list: String = list
-                                        .iter()
-                                        .map(|m| {
-                                            let mut m = m.clone();
-                                            m += "\n";
-                                            m
-                                        })
-                                        .collect();
-                                    slack::post_message(&cfg.bot_token, &cfg.channel, &list).await
-                                }
-                                _ => {}
+                            if let Some(cmd) = msg.text.strip_prefix("logger ") {
+                                log::info!("logger {} from {} by {}", &cmd, msg.channel, msg.user);
+                                logger_cmd(&cfg, &cmd).await
                             }
                         }
                     }
@@ -131,9 +119,41 @@ async fn main() {
     }
 }
 
-async fn loggger_random(cfg: &Config, msg: &slack::EventMessage<'_>) {
-    log::info!("logger random from {} by {}", msg.channel, msg.user);
+async fn logger_cmd(cfg: &Config, cmd: &str) {
+    let mut output = String::new();
+    match cmd {
+        "help" => {
+            output += concat!(
+                "usage: logger [COMMAND]\n",
+                "commands:\n",
+                "  `help`     Show this usage\n",
+                "  `list`     Show `logger random` member\n",
+                "  `random`   Choose logger\n"
+            );
+        }
+        "list" => {
+            let list = &cfg.member;
+            output = list
+                .iter()
+                .map(|m| {
+                    let mut m = m.clone();
+                    m += "\n";
+                    m
+                })
+                .collect();
+        }
+        "random" => loggger_random(&cfg).await,
+        _ => {
+            output += &format!(
+                "[logger] '{}' is not a logger command.\nSee 'logger help'",
+                &cmd
+            );
+        }
+    }
+    slack::post_message(&cfg.bot_token, &cfg.channel, &output).await
+}
 
+async fn loggger_random(cfg: &Config) {
     // choose
     let logger = &cfg.member.choose(&mut rand::rngs::OsRng).unwrap();
     log::info!("logger choosed: {}", logger);
