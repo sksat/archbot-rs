@@ -40,6 +40,8 @@ async fn auth_test(token: &str) {
 async fn main() {
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
 
+    let start_msg = format!("archbot v{} started", env!("CARGO_PKG_VERSION"));
+    log::info!("{}", &start_msg);
     log::debug!("debug mode");
 
     log::info!("loading config");
@@ -49,6 +51,8 @@ async fn main() {
     let cfg: Config = toml::from_str(&cfg).unwrap();
 
     auth_test(&cfg.bot_token).await;
+
+    slack::post_message(&cfg.bot_token, &cfg.channel, &start_msg).await;
 
     let res = slack::get_ws_url(&cfg.app_token).await;
     let url: url::Url = res.unwrap();
