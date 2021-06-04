@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 #[derive(serde::Deserialize, Debug)]
 pub struct WsUrlResponseJson {
     pub ok: bool,
@@ -269,5 +271,35 @@ pub fn parse_message(json: &str) -> Result<Message, ParseMessageError> {
 impl From<serde_json::Error> for ParseMessageError {
     fn from(e: serde_json::Error) -> ParseMessageError {
         ParseMessageError::JsonParse(e)
+    }
+}
+
+pub async fn post_message(token: &str, channel: &String, msg: &String) {
+    let mut q = HashMap::new();
+    q.insert("channel", &channel);
+    q.insert("text", &msg);
+    let url = url::Url::parse_with_params("https://slack.com/api/chat.postMessage", &q).unwrap();
+
+    let r = surf::post(url)
+        .header(
+            surf::http::headers::AUTHORIZATION,
+            format!("Bearer {}", &token),
+        )
+        .recv_string()
+        .await;
+
+    if r.is_err() {
+        log::error!("POST: {:?}", r.err().unwrap());
+        return;
+        //continue;
+    }
+
+    let r = r.unwrap();
+    log::info!("{}", r);
+    let info: Result<PostInfoRaw, _> = serde_json::from_str(&r);
+    if let Ok(i) = info {
+        log::info!("{:?}", i)
+    } else {
+        log::error!("{:?}", info.err().unwrap());
     }
 }

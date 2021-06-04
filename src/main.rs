@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::fs;
 use std::io::Read;
 
@@ -124,32 +123,5 @@ async fn loggger_random(cfg: &Config, msg: &slack::EventMessage<'_>) {
     let logger = &cfg.member.choose(&mut rand::rngs::OsRng).unwrap();
     log::info!("logger choosed: {}", logger);
 
-    let channel = &cfg.channel;
-    let mut q = HashMap::new();
-    q.insert("channel", &channel);
-    q.insert("text", &logger);
-    let url = url::Url::parse_with_params("https://slack.com/api/chat.postMessage", &q).unwrap();
-
-    let r = surf::post(url)
-        .header(
-            surf::http::headers::AUTHORIZATION,
-            format!("Bearer {}", &cfg.bot_token),
-        )
-        .recv_string()
-        .await;
-
-    if r.is_err() {
-        log::error!("POST: {:?}", r.err().unwrap());
-        return;
-        //continue;
-    }
-
-    let r = r.unwrap();
-    log::info!("{}", r);
-    let info: Result<slack::PostInfoRaw, _> = serde_json::from_str(&r);
-    if let Ok(i) = info {
-        log::info!("{:?}", i)
-    } else {
-        log::error!("{:?}", info.err().unwrap());
-    }
+    slack::post_message(&cfg.bot_token, &cfg.channel, logger).await;
 }
