@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 #[derive(serde::Deserialize, Debug)]
 pub struct WsUrlResponseJson {
     pub ok: bool,
@@ -136,10 +138,10 @@ pub enum Event<'a> {
 pub struct EventMessage<'a> {
     client_msg_id: Option<&'a str>,
     bot_id: Option<&'a str>,
-    pub text: &'a str,
+    pub text: String,
     pub user: &'a str,
     ts: &'a str,
-    team: &'a str,
+    team: Option<&'a str>,
     // blocks
     pub channel: &'a str,
     event_ts: &'a str,
@@ -198,6 +200,21 @@ mod tests {
     use crate::slack::*;
 
     #[test]
+    fn deserialize_eventmessage() {
+        let ems = r#"{
+          "bot_id": "B01",
+          "text": "\u30ea\u30de\u30a4\u30f3\u30c0\u30fc : logger random.",
+          "user": "USLACKBOT",
+          "ts": "1622817919.003000",
+          "team": "T01U5SDH0QH",
+          "channel": "C02389A6YGJ",
+          "event_ts": "1622817919.003000",
+          "channel_type": "channel"
+        }"#;
+        let _em: EventMessage = serde_json::from_str(&ems).unwrap();
+    }
+
+    #[test]
     fn deserialize_postinfo_error() {
         let es = "{\"ok\":false,\"error\":\"channel_not_found\"}";
         let _e: PostInfoRaw = serde_json::from_str(&es).unwrap();
@@ -247,12 +264,42 @@ pub fn parse_message(json: &str) -> Result<Message, ParseMessageError> {
     let json_pretty = jsonxf::pretty_print(json).unwrap();
     log::debug!("pretty: {}", json_pretty);
     let msg: Message = serde_json::from_str(&json)?;
-    log::debug!("{:?}", msg);
+    log::debug!("parsed msg: {:?}", msg);
     Ok(msg)
 }
 
 impl From<serde_json::Error> for ParseMessageError {
     fn from(e: serde_json::Error) -> ParseMessageError {
         ParseMessageError::JsonParse(e)
+    }
+}
+
+pub async fn post_message(token: &str, channel: &str, msg: &str) {
+    let mut q = HashMap::new();
+    q.insert("channel", &channel);
+    q.insert("text", &msg);
+    let url = url::Url::parse_with_params("https://slack.com/api/chat.postMessage", &q).unwrap();
+
+    let r = surf::post(url)
+        .header(
+            surf::http::headers::AUTHORIZATION,
+            format!("Bearer {}", &token),
+        )
+        .recv_string()
+        .await;
+
+    if r.is_err() {
+        log::error!("POST: {:?}", r.err().unwrap());
+        return;
+        //continue;
+    }
+
+    let r = r.unwrap();
+    log::info!("{}", r);
+    let info: Result<PostInfoRaw, _> = serde_json::from_str(&r);
+    if let Ok(i) = info {
+        log::info!("{:?}", i)
+    } else {
+        log::error!("{:?}", info.err().unwrap());
     }
 }

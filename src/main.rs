@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::fs;
 use std::io::Read;
 
@@ -39,8 +38,11 @@ async fn auth_test(token: &str) {
 
 #[async_std::main]
 async fn main() {
-    std::env::set_var("RUST_LOG", "archbot=info");
-    env_logger::init();
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
+
+    let start_msg = format!("archbot v{} started", env!("CARGO_PKG_VERSION"));
+    log::info!("{}", &start_msg);
+    log::debug!("debug mode");
 
     log::info!("loading config");
     let mut cfg_file = fs::File::open("config.toml").unwrap();
@@ -49,6 +51,8 @@ async fn main() {
     let cfg: Config = toml::from_str(&cfg).unwrap();
 
     auth_test(&cfg.bot_token).await;
+
+    slack::post_message(&cfg.bot_token, &cfg.channel, &start_msg).await;
 
     let res = slack::get_ws_url(&cfg.app_token).await;
     let url: url::Url = res.unwrap();
@@ -95,9 +99,15 @@ async fn main() {
 
                         let event = ea.payload.event;
                         if let slack::Event::Message(msg) = event {
-                            match msg.text {
-                                "logger random" => loggger_random(&cfg, &msg).await,
-                                _ => {}
+                            // Slack Reminder
+                            if msg.user == "USLACKBOT" && msg.text.contains("logger random") {
+                                loggger_random(&cfg).await;
+                            }
+
+                            log::debug!("msg: \"{}\"", &msg.text);
+                            if let Some(cmd) = msg.text.strip_prefix("logger ") {
+                                log::info!("logger {} from {} by {}", &cmd, msg.channel, msg.user);
+                                logger_cmd(&cfg, &cmd).await
                             }
                         }
                     }
@@ -109,39 +119,44 @@ async fn main() {
     }
 }
 
-async fn loggger_random(cfg: &Config, msg: &slack::EventMessage<'_>) {
-    log::info!("logger random from {} by {}", msg.channel, msg.user);
+async fn logger_cmd(cfg: &Config, cmd: &str) {
+    let mut output = String::new();
+    match cmd {
+        "help" => {
+            output += concat!(
+                "usage: logger [COMMAND]\n",
+                "commands:\n",
+                "  `help`     Show this usage\n",
+                "  `list`     Show `logger random` member\n",
+                "  `random`   Choose logger\n"
+            );
+        }
+        "list" => {
+            let list = &cfg.member;
+            output = list
+                .iter()
+                .map(|m| {
+                    let mut m = m.clone();
+                    m += "\n";
+                    m
+                })
+                .collect();
+        }
+        "random" => loggger_random(&cfg).await,
+        _ => {
+            output += &format!(
+                "[logger] '{}' is not a logger command.\nSee 'logger help'",
+                &cmd
+            );
+        }
+    }
+    slack::post_message(&cfg.bot_token, &cfg.channel, &output).await
+}
 
+async fn loggger_random(cfg: &Config) {
     // choose
     let logger = &cfg.member.choose(&mut rand::rngs::OsRng).unwrap();
     log::info!("logger choosed: {}", logger);
 
-    let channel = &cfg.channel;
-    let mut q = HashMap::new();
-    q.insert("channel", &channel);
-    q.insert("text", &logger);
-    let url = url::Url::parse_with_params("https://slack.com/api/chat.postMessage", &q).unwrap();
-
-    let r = surf::post(url)
-        .header(
-            surf::http::headers::AUTHORIZATION,
-            format!("Bearer {}", &cfg.bot_token),
-        )
-        .recv_string()
-        .await;
-
-    if r.is_err() {
-        log::error!("POST: {:?}", r.err().unwrap());
-        return;
-        //continue;
-    }
-
-    let r = r.unwrap();
-    log::info!("{}", r);
-    let info: Result<slack::PostInfoRaw, _> = serde_json::from_str(&r);
-    if let Ok(i) = info {
-        log::info!("{:?}", i)
-    } else {
-        log::error!("{:?}", info.err().unwrap());
-    }
+    slack::post_message(&cfg.bot_token, &cfg.channel, logger).await;
 }

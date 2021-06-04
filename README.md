@@ -54,8 +54,9 @@ Then, we can use `cargo` command.
 This is package manager and build system.
 
 ```sh
-$ cargo build               # build(debug mode)
-$ cargo run                 # run(debug mode)
+$ cargo build                           # build(debug mode)
+$ cargo run                             # run(debug mode)
+$ env RUST_LOG=archbot=debug cargo r    # run(debug mode with debug log)
 ```
 
 ## Author
