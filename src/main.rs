@@ -39,8 +39,7 @@ async fn auth_test(token: &str) {
 
 #[async_std::main]
 async fn main() {
-    std::env::set_var("RUST_LOG", "archbot=info");
-    env_logger::init();
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
 
     log::debug!("debug mode");
 
