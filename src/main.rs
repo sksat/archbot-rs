@@ -96,10 +96,8 @@ async fn main() {
                         let event = ea.payload.event;
                         if let slack::Event::Message(msg) = event {
                             // Slack Reminder
-                            if msg.user == "USLACKBOT" {
-                                if msg.text.contains("logger random") {
-                                    loggger_random(&cfg, &msg).await;
-                                }
+                            if msg.user == "USLACKBOT" && msg.text.contains("logger random") {
+                                loggger_random(&cfg, &msg).await;
                             }
 
                             log::debug!("msg: \"{}\"", &msg.text);
@@ -108,11 +106,11 @@ async fn main() {
                                 "logger list" => {
                                     let list = &cfg.member;
                                     let list: String = list
-                                        .into_iter()
+                                        .iter()
                                         .map(|m| {
                                             let mut m = m.clone();
                                             m += "\n";
-                                            return m;
+                                            m
                                         })
                                         .collect();
                                     slack::post_message(&cfg.bot_token, &cfg.channel, &list).await

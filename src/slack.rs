@@ -274,7 +274,7 @@ impl From<serde_json::Error> for ParseMessageError {
     }
 }
 
-pub async fn post_message(token: &str, channel: &String, msg: &String) {
+pub async fn post_message(token: &str, channel: &str, msg: &str) {
     let mut q = HashMap::new();
     q.insert("channel", &channel);
     q.insert("text", &msg);
