@@ -42,6 +42,8 @@ async fn main() {
     std::env::set_var("RUST_LOG", "archbot=info");
     env_logger::init();
 
+    log::debug!("debug mode");
+
     log::info!("loading config");
     let mut cfg_file = fs::File::open("config.toml").unwrap();
     let mut cfg = String::new();
@@ -95,7 +97,14 @@ async fn main() {
 
                         let event = ea.payload.event;
                         if let slack::Event::Message(msg) = event {
-                            match msg.text {
+                            // Slack Reminder
+                            if msg.user == "USLACKBOT" {
+                                if msg.text.contains("logger random") {
+                                    loggger_random(&cfg, &msg).await;
+                                }
+                            }
+
+                            match msg.text.as_str() {
                                 "logger random" => loggger_random(&cfg, &msg).await,
                                 _ => {}
                             }
