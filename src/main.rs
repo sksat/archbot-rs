@@ -71,7 +71,12 @@ async fn main() {
 
     log::debug!("{:?}", &stream);
 
-    while let Some(msg) = stream.next().await {
+    loop {
+        let msg = stream.next().await;
+        if msg.is_none() {
+            continue;
+        }
+        let msg = msg.unwrap();
         if let Err(me) = msg {
             // like Protocol(ResetWithoutClosingHandshake)
             log::error!("msg error: {:?}", me);
