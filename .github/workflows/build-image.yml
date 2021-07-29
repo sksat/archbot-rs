@@ -1,16 +1,18 @@
-name: Build Container Image & Push
+name: Build Container Image
 
 on:
   push:
     branches:
-      - main
-      - develop
+      - '*'
+    tags:
+      - v*
     paths:
       - 'src/**'
       - 'Cargo.toml'
       - 'Cargo.lock'
+      - 'rust-toolchain'
       - 'Dockerfile'
-      - '.github/workflows/**'
+      - '.github/workflows/build-image.yml'
 
 jobs:
   build:
@@ -53,7 +55,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           context: .
-          push: true
+          push: ${{ github.ref == 'refs/heads/main' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=local,src=/tmp/.buildx-cache
