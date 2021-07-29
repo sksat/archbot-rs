@@ -225,7 +225,32 @@ mod tests {
 
     #[test]
     fn deserialize_postinfo_ok() {
-        let os = "{\"ok\":true,\"channel\":\"C02389A6YGJ\",\"ts\":\"1622717214.001900\",\"message\":{\"bot_id\":\"hoge\",\"type\":\"message\",\"text\":\"sksat\",\"user\":\"U01UR56PLLC\",\"ts\":\"1622717214.001900\",\"team\":\"T01U5SDH0QH\",\"bot_profile\":{\"id\":\"B01UK6J77JP\",\"deleted\":false,\"name\":\"archbot\",\"updated\":1618578906,\"app_id\":\"A01UC646PGW\",\"icons\":{\"image_36\":\"https:\\/\\/a.slack-edge.com\\/80588\\/img\\/plugins\\/app\\/bot_36.png\",\"image_48\":\"https:\\/\\/a.slack-edge.com\\/80588\\/img\\/plugins\\/app\\/bot_48.png\",\"image_72\":\"https:\\/\\/a.slack-edge.com\\/80588\\/img\\/plugins\\/app\\/service_72.png\"},\"team_id\":\"T01U5SDH0QH\"}}}";
+        let os = r#"{
+          "ok": true,
+          "channel": "C02389A6YGJ",
+          "ts": "1622717214.001900",
+          "message": {
+            "bot_id": "hoge",
+            "type": "message",
+            "text": "sksat",
+            "user": "U01UR56PLLC",
+            "ts": "1622717214.001900",
+            "team": "T01U5SDH0QH",
+            "bot_profile": {
+              "id": "B01UK6J77JP",
+              "deleted": false,
+              "name": "archbot",
+              "updated": 1618578906,
+              "app_id": "A01UC646PGW",
+              "icons": {
+                "image_36": "https://a.slack-edge.com/80588/img/plugins/app/bot_36.png",
+                "image_48": "https://a.slack-edge.com/80588/img/plugins/app/bot_48.png",
+                "image_72": "https://a.slack-edge.com/80588/img/plugins/app/service_72.png"
+              },
+              "team_id": "T01U5SDH0QH"
+            }
+          }
+        }"#;
         let _o: PostInfoRaw = serde_json::from_str(&os).unwrap();
     }
 }
