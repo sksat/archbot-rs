@@ -6,7 +6,7 @@ edition = "2018"
 build = "build.rs"
 
 [build-dependencies]
-vergen = { version = "5.1.13", default-features = false, features = ["build", "git"] }
+vergen = { version = "5.1.14", default-features = false, features = ["build", "git"] }
 anyhow = "1.0.42"
 
 [dependencies]
