@@ -6,10 +6,10 @@ on:
       - 'src/**'
       - 'Cargo.toml'
       - 'Cargo.lock'
-      - '.github/workflows/**'
+      - '.github/workflows/ci.yml'
 
 jobs:
-  build:
+  rust:
     runs-on: ubuntu-latest
 
     steps:
@@ -25,3 +25,8 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           args: --all-features
+
+      - name: execute unit test
+        uses: actions-rs/cargo@v1
+        with:
+          command: test

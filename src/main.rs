@@ -40,8 +40,13 @@ async fn auth_test(token: &str) {
 async fn main() {
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
 
-    let start_msg = format!("archbot v{} started", env!("CARGO_PKG_VERSION"));
+    let start_msg = format!(
+        "archbot v{}-{} started",
+        env!("CARGO_PKG_VERSION"),
+        env!("VERGEN_GIT_SHA_SHORT")
+    );
     log::info!("{}", &start_msg);
+
     log::debug!("debug mode");
 
     log::info!("loading config");
