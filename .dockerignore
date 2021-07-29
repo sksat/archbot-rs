@@ -2,5 +2,4 @@ README.md
 LICENSE
 Dockerfile
 docker-compose.yml
-.git/*
 target/*

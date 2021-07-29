@@ -2,6 +2,7 @@ use std::fs;
 use std::io::Read;
 
 use async_std::stream::StreamExt;
+use async_tungstenite::tungstenite;
 use futures_util::sink::SinkExt;
 
 use rand::seq::SliceRandom;
